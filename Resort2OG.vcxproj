@@ -149,6 +149,12 @@
   <ItemGroup>
     <ClCompile Include="Resort2OG.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Endian.h" />
+    <ClInclude Include="KCL.h" />
+    <ClInclude Include="PMP.h" />
+    <ClInclude Include="Types.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
