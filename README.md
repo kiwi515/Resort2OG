@@ -3,7 +3,7 @@ Tool for converting the KCL and PMP files seen in Wii Sports Resort golf courses
   
 #### Progress  
   
-- [X] KCL support  
+- [ ] KCL support  
 - [ ] PMP support  
   
   
