@@ -21,7 +21,7 @@ KCL files are the Wii's most common collision filetype, and has been seen on oth
 
 This tool converts the collision flags of the KCL model to match the ones used in the original Wii Sports.  
   
-## Special Thanks
+## Credits
 - GibHaltmannKill for the documentation used to work with PMP files; PMP support would not be possible without this knowledge
 - Jimmy Kaz for testing and documenting the Resort KCL values so I didn't spend many hours doing so myself
 - EKG for creating their [C++ endian library](https://github.com/ekg/endian)
