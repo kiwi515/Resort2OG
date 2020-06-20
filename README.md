@@ -1,5 +1,5 @@
 # Resort2OG
-Tool for converting the KCL and PMP files seen in Wii Sports Resort golf courses to files usable in Wii Sports  
+Tool for converting the KCL and PMP files seen in Wii Sports Resort golf courses to files usable in Wii Sports 
   
 #### Progress  
   
@@ -24,4 +24,3 @@ This tool converts the collision flags of the KCL model to match the ones used i
 ## Credits
 - GibHaltmannKill for the documentation used to work with PMP files; PMP support would not be possible without this knowledge
 - Jimmy Kaz for testing and documenting the Resort KCL values so I didn't spend many hours doing so myself
-- EKG for creating their [C++ endian library](https://github.com/ekg/endian)
