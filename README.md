@@ -1,10 +1,10 @@
 # Resort2OG
 Command-line tool for converting the KCL and PMP files seen in Wii Sports Resort golf courses to files usable in Wii Sports 
   
-#### Progress  
+#### Progress (Complete!)  
   
-- [ ] KCL support  
-- [ ] PMP support  
+- [X] KCL support  
+- [X] PMP support  
   
   
 ## PMP
