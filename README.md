@@ -5,7 +5,10 @@ Command-line tool for converting the KCL and PMP files seen in Wii Sports Resort
   
 - [X] KCL support  
 - [X] PMP support  
-  
+    
+## Usage
+Resort2OG is run through Command Prompt as it is a command-line tool.  
+Syntax is as follows: `Resort2OG.exe kcl/pmp myFile.kcl/myFile.pmp`  
   
 ## PMP
 PMP files in Golf are used for object placement, some examples being the player start position, all possible pin positions, trees, etc. 
