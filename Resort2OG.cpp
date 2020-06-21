@@ -63,9 +63,7 @@ int main(int argc, char* argv[])
 			char magic[5] = "AAAA";
 			inFile.read(reinterpret_cast<char*>(magic), 4);
 			if (_strcmpi(magic, "PMPF") == 1)
-			{
 				printError(PMP_INVALID_MAGIC);
-			}
 
 			inFile.seekg(0x10, std::ios::beg); // Move past first set of padding -> obj count
 
@@ -91,6 +89,7 @@ int main(int argc, char* argv[])
 			// How many objects will be saved (all that aren't in group 0xB)
 			u16 outObjCount = 0;
 
+			// Grab object data from PMP file
 			for (int obj = 0; obj < objCount; obj++)
 			{
 				// Group ID
@@ -154,13 +153,10 @@ int main(int argc, char* argv[])
 
 			// Output file
 			std::ofstream outFile;
-			outFile.open(std::string(argv[2]) + ".ogPMP", std::ios::binary);
+			outFile.open(std::string(argv[2]) + ".ogPMP", std::ios::binary | std::ios::trunc);
 			
-			// Grab file size
-			std::ifstream getFileSize;
-			getFileSize.open(argv[2], std::ios::binary | std::ios::ate);
-			u32 fileSize = _byteswap_ulong(getFileSize.tellg());
-			getFileSize.close();
+			// Calculate end of file for route/point null offsets (0x7F is header size)
+			u32 fileSize = _byteswap_ulong(0x7F + outObjCount * sizeof(PMP::Object) + 0x1);
 
 			// Padding used in the header
 			std::string headerPadding1(0xC, '\x00');
@@ -180,18 +176,51 @@ int main(int argc, char* argv[])
 			outFile.write(reinterpret_cast<char*>(&fileSize), sizeof(fileSize)); // Point data set to end of file (no points)
 			outFile << headerPadding3; // Header padding section 3
 
+			// Saving the objects back into a PMP
 			for (int obj = 0; obj < objCount; obj++)
 			{
-				
+				// All Object members are in Big-Endian to make ifstream writes more simple,
+				// so any checks will have to byteswap again
+				if (_byteswap_ushort(objList[obj].groupID) == 0x0001) // We only save back objects in group 0x0001
+				{
+					// Refer to "Grabbing object data from PMP" if you want to see this process commented
+					outFile.write(reinterpret_cast<char*>(&objList[obj].groupID), sizeof(objList[obj].groupID));
+					outFile.write(reinterpret_cast<char*>(&objList[obj].objID), sizeof(objList[obj].objID));
+					outFile.write(reinterpret_cast<char*>(&objList[obj].unk1), sizeof(objList[obj].unk1));
+					for (int v = 0; v < 3; v++)
+						outFile.write(reinterpret_cast<char*>(&objList[obj].posVec[v]), sizeof(objList[obj].posVec[v]));
+
+					for (int v = 0; v < 3; v++)
+						outFile.write(reinterpret_cast<char*>(&objList[obj].scaleVec[v]), sizeof(objList[obj].scaleVec[v]));
+
+					for (int v = 0; v < 3; v++)
+						outFile.write(reinterpret_cast<char*>(&objList[obj].Mtx.firstColumn[v]), sizeof(objList[obj].Mtx.firstColumn[v]));
+
+					for (int v = 0; v < 3; v++)
+						outFile.write(reinterpret_cast<char*>(&objList[obj].Mtx.secondColumn[v]), sizeof(objList[obj].Mtx.secondColumn[v]));
+
+					for (int v = 0; v < 3; v++)
+						outFile.write(reinterpret_cast<char*>(&objList[obj].Mtx.thirdColumn[v]), sizeof(objList[obj].Mtx.thirdColumn[v]));
+
+					outFile.write(reinterpret_cast<char*>(&objList[obj].unk2), sizeof(objList[obj].unk2));
+
+					for (int p = 0; p < 16; p++)
+						outFile.write(reinterpret_cast<char*>(&objList[obj].exParams[p]), sizeof(objList[obj].exParams[p]));
+				}
 			}
 
+			// End output session
 			outFile.close();
-			delete[] objList; // Free memory
+			// Free memory
+			delete[] objList;
 		}
 		// Input file is said to be KCL
 		else if (fileType == FType::KCL)
 		{
-			
+
+			/*===============================================*/
+			// KCL is still a work in progress at the moment.
+			/*===============================================*/
 
 			// End input session
 			inFile.close();
