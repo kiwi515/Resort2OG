@@ -27,12 +27,15 @@ void printError(Error err)
 	case INVALID_INPUT:
 		std::cout << "Invalid input!" << std::endl;
 		std::cout << "Valid usage:" << std::endl << "Resort2OG.exe kcl/pmp myFile.kcl/myFile.pmp" << std::endl;
+		break;
 	case OPEN_FILE_ERROR:
 		std::cout << "An error caused your input file to open unsuccessfully." << std::endl;
 		std::cout << "Are you sure the file exists and is not being used by another process?" << std::endl;
+		break;
 	case PMP_INVALID_MAGIC:
 		std::cout << "Your input PMP file does not have the correct PMP file magic (PMPF)" << std::endl;
 		std::cout << "Are you sure this is a valid PMP?" << std::endl;
+		break;
 	}
 
 	exit(EXIT_FAILURE);
