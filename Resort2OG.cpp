@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	if (inFile.is_open())
 	{
 		/*==========================================*/
-		//					PMP
+		//                 PMP
 		// (Rather than only reading the bytes
 		// we want to modify, since some PMP
 		// objects will not be saved to the new file,
@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
 			delete[] objList;
 		}
 		/*======================================*/
-		//				  KCL
+		//                KCL
 		// (Unlike PMP files, the output KCL
 		// will always be the same file size,
 		// so we only read entries in Section 3,
