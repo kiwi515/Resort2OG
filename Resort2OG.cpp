@@ -11,6 +11,7 @@ enum Error
 	INVALID_INPUT = 0x1,
 	OPEN_FILE_ERROR = 0x2,
 	PMP_INVALID_MAGIC = 0x3,
+	PMP_ALREADY_CONVERTED = 0x4
 };
 
 enum class FType
@@ -36,6 +37,11 @@ void printError(Error err)
 		std::cout << "Your input PMP file does not have the correct PMP file magic (PMPF)" << std::endl;
 		std::cout << "Are you sure this is a valid PMP?" << std::endl;
 		break;
+	case PMP_ALREADY_CONVERTED:
+		std::cout << "No objects were found in group 0x2." << std::endl;
+		std::cout << "This usually means you have ran this file through Resort2OG already," << std::endl;
+		std::cout << "or it is not a valid Wii Sports Resort Golf PMP file." << std::endl;
+		std::cout << "Are you sure you haven't converted this PMP already?" << std::endl;
 	}
 
 	exit(EXIT_FAILURE);
@@ -160,6 +166,11 @@ int main(int argc, char* argv[])
 			// End input session
 			inFile.close();
 
+			if (outObjCount == 0)
+			{
+				printError(PMP_ALREADY_CONVERTED);
+			}
+
 			// Output PMP
 			std::ofstream outFile;
 			outFile.open(std::string(argv[2]) + ".ogPMP", std::ios::binary | std::ios::trunc);
@@ -222,6 +233,8 @@ int main(int argc, char* argv[])
 			outFile.close();
 			// Free memory
 			delete[] objList;
+
+			std::cout << "Successfully converted " << argv[2] << "." << std::endl << outObjCount << '/' << objCount << " objects saved to new PMP." << std::endl;
 		}
 		/*======================================*/
 		//                KCL
@@ -296,34 +309,34 @@ int main(int argc, char* argv[])
 				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].flag), sizeof(Sec3Data[t].flag));
 				
 				// Resort KCL flag -> OGWS KCL flag conversion
-				switch (Sec3Data[t].flag)
+				switch (_byteswap_ushort(Sec3Data[t].flag))
 				{
 				case 0x0101: // Resort (Fairway)
-					Sec3Data[t].flag = 0x0001; // OGWS (Fairway)
+					Sec3Data[t].flag = _byteswap_ushort(0x0001); // OGWS (Fairway)
 					break;
 				case 0x0102: // Resort (Rough)
-					Sec3Data[t].flag = 0x0002; // OGWS (Rough)
+					Sec3Data[t].flag = _byteswap_ushort(0x0002); // OGWS (Rough)
 					break;
 				case 0x0103: // Resort (Bunker)
-					Sec3Data[t].flag = 0x0003; // OGWS (Bunker)
+					Sec3Data[t].flag = _byteswap_ushort(0x0003); // OGWS (Bunker)
 					break;
 				case 0x0104: // Resort (OB)
-					Sec3Data[t].flag = 0x0004; // OGWS (OB)
+					Sec3Data[t].flag = _byteswap_ushort(0x0004); // OGWS (OB)
 					break;
 				case 0x0106: // Resort (Green)
-					Sec3Data[t].flag = 0x0006; // OGWS (Green)
+					Sec3Data[t].flag = _byteswap_ushort(0x0006); // OGWS (Green)
 					break;
 				case 0x0107: // Resort (Water Hazard)
-					Sec3Data[t].flag = 0x0007; // OGWS (Water Hazard)
+					Sec3Data[t].flag = _byteswap_ushort(0x0007); // OGWS (Water Hazard)
 					break;
 				case 0x0109: // Resort (Fringe)
-					Sec3Data[t].flag = 0x0009; // OGWS (Fringe)
+					Sec3Data[t].flag = _byteswap_ushort(0x0009); // OGWS (Fringe)
 					break;
 				case 0x010C: // Resort (Cliffside)
-					Sec3Data[t].flag = 0x000C; // OGWS (Cliffside)
+					Sec3Data[t].flag = _byteswap_ushort(0x000C); // OGWS (Cliffside)
 					break;
 				case 0x0805: // Resort (Camera Lock OB)
-					Sec3Data[t].flag = 0x0005; // OGWS (Camera Lock OB)
+					Sec3Data[t].flag = _byteswap_ushort(0x0005); // OGWS (Camera Lock OB)
 					break;
 				}
 
@@ -345,6 +358,8 @@ int main(int argc, char* argv[])
 
 			// Free memory
 			delete[] Sec3Data;
+			
+			std::cout << "Successfully converted " << argv[2] << "." << std::endl << sec3TriCount << " flags processed." << std::endl;
 		}
 	}
 	else printError(OPEN_FILE_ERROR);
