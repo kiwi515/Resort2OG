@@ -56,7 +56,13 @@ int main(int argc, char* argv[])
 	inFile.open(argv[2], std::ios::binary);
 	if (inFile.is_open())
 	{
-		// Input file is said to be PMP
+		/*==========================================*/
+		//					PMP
+		// (Rather than only reading the bytes
+		// we want to modify, since some PMP
+		// objects will not be saved to the new file,
+		// we read every object in full.)
+		/*==========================================*/
 		if (fileType == FType::PMP)
 		{
 			// File magic verification
@@ -151,7 +157,7 @@ int main(int argc, char* argv[])
 			// End input session
 			inFile.close();
 
-			// Output file
+			// Output PMP
 			std::ofstream outFile;
 			outFile.open(std::string(argv[2]) + ".ogPMP", std::ios::binary | std::ios::trunc);
 			
@@ -214,18 +220,129 @@ int main(int argc, char* argv[])
 			// Free memory
 			delete[] objList;
 		}
-		// Input file is said to be KCL
+		/*======================================*/
+		//				  KCL
+		// (Unlike PMP files, the output KCL
+		// will always be the same file size,
+		// so we only read entries in Section 3,
+		// edit the flags and save them back.)
+		// 
+		// (The rest of the sections are read as well
+		// to reconstruct the KCL file at the end.)
+		/*======================================*/
 		else if (fileType == FType::KCL)
 		{
+			u32 sec3Offset = 0; // Offset into the KCL to Section 3
+			u32 sec4Offset = 0; // Offset into the KCL to Section 4
+			u32 sec3TriCount = 0; // Section 3 triangle/entry count ((sec4Offset - sec3Offset) / sizeof(KCL::Triangle))
 
-			/*===============================================*/
-			// KCL is still a work in progress at the moment.
-			/*===============================================*/
+			std::ifstream inFile;
+			inFile.open(argv[2], std::ios::binary | std::ios::ate);
 
-			// End input session
+			// Grab file size
+			u32 fileSize = (u32)inFile.tellg();
+
+			// Seek to Section 3 offset (u32)
+			inFile.seekg(0x8, std::ios::beg);
+			inFile.read(reinterpret_cast<char*>(&sec3Offset), sizeof(sec3Offset));
+			// Section 3 is one indexed into Section 4, so the offset written is 0x10 behind the actual start of Section 3
+			sec3Offset = _byteswap_ulong(sec3Offset) + 0x10;
+
+			// Section 4 offset
+			inFile.read(reinterpret_cast<char*>(&sec4Offset), sizeof(sec4Offset));
+			sec4Offset = _byteswap_ulong(sec4Offset);
+			sec3TriCount = (sec4Offset - sec3Offset) / sizeof(KCL::Triangle);
+			// Allocate the array
+			KCL::Triangle *Sec3Data = new KCL::Triangle[sec3TriCount];
+
+			// Output KCL
+			std::ofstream outFile;
+			outFile.open(std::string(argv[2]) + ".ogKCL", std::ios::binary | std::ios::trunc);
+
+			// Read sections 1 & 2
+			inFile.seekg(0, std::ios::beg);
+			char byte;
+			for (u32 i = 0; i < sec3Offset; i++)
+			{
+				inFile.read(&byte, sizeof(byte));
+				outFile.write(&byte, sizeof(byte));
+			}
+
+			// Read every triangle/entry and convert their flags (if needed)
+			for (u32 t = 0; t < sec3TriCount; t++)
+			{
+				// Length
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].length), sizeof(Sec3Data[t].length));
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].length), sizeof(Sec3Data[t].length));
+				// Position index
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].posIndex), sizeof(Sec3Data[t].posIndex));
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].posIndex), sizeof(Sec3Data[t].posIndex));
+				// Direction index
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].dirIndex), sizeof(Sec3Data[t].dirIndex));
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].dirIndex), sizeof(Sec3Data[t].dirIndex));
+				// Normal A index
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].normalA), sizeof(Sec3Data[t].normalA));
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].normalA), sizeof(Sec3Data[t].normalA));
+				// Normal B index
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].normalB), sizeof(Sec3Data[t].normalB));
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].normalB), sizeof(Sec3Data[t].normalB));
+				// Normal C index
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].normalC), sizeof(Sec3Data[t].normalC));
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].normalC), sizeof(Sec3Data[t].normalC));
+				// Collision flag
+				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].flag), sizeof(Sec3Data[t].flag));
+				
+				// Resort KCL flag -> OGWS KCL flag conversion
+				switch (Sec3Data[t].flag)
+				{
+				case 0x0101: // Resort (Fairway)
+					Sec3Data[t].flag = 0x0001; // OGWS (Fairway)
+					break;
+				case 0x0102: // Resort (Rough)
+					Sec3Data[t].flag = 0x0002; // OGWS (Rough)
+					break;
+				case 0x0103: // Resort (Bunker)
+					Sec3Data[t].flag = 0x0003; // OGWS (Bunker)
+					break;
+				case 0x0104: // Resort (OB)
+					Sec3Data[t].flag = 0x0004; // OGWS (OB)
+					break;
+				case 0x0106: // Resort (Green)
+					Sec3Data[t].flag = 0x0006; // OGWS (Green)
+					break;
+				case 0x0107: // Resort (Water Hazard)
+					Sec3Data[t].flag = 0x0007; // OGWS (Water Hazard)
+					break;
+				case 0x0109: // Resort (Fringe)
+					Sec3Data[t].flag = 0x0009; // OGWS (Fringe)
+					break;
+				case 0x010C: // Resort (Cliffside)
+					Sec3Data[t].flag = 0x000C; // OGWS (Cliffside)
+					break;
+				case 0x0805: // Resort (Camera Lock OB)
+					Sec3Data[t].flag = 0x0005; // OGWS (Camera Lock OB)
+					break;
+				}
+
+				// Write the flag after it has been converted rather than after the initial read
+				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].flag), sizeof(Sec3Data[t].flag));
+			}
+
+			// Read Section 4 and write it to the new KCL
+			// There is probably a better way to do this but I don't know
+			for (u32 i = 0; i < fileSize - sec4Offset; i++)
+			{
+				inFile.read(&byte, sizeof(byte));
+				outFile.write(&byte, sizeof(byte));
+			}
+
+			// End I/O session
 			inFile.close();
-		}
+			outFile.close();
 
+			// Free memory
+			delete[] Sec3Data;
+		}
 	}
 	else printError(OPEN_FILE_ERROR);
 
