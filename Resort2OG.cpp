@@ -49,6 +49,7 @@ void printError(Error err)
 
 int main(int argc, char* argv[])
 {
+	std::cout << std::endl << "Resort2OG" << std::endl << "Contact me @ kiwi#5018 on Discord if you have any issues/questions/ideas for features." << std::endl;
 	FType fileType = FType::EMPTY;
 
 	// Checking arg count
@@ -234,7 +235,7 @@ int main(int argc, char* argv[])
 			// Free memory
 			delete[] objList;
 
-			std::cout << "Successfully converted " << argv[2] << "." << std::endl << outObjCount << '/' << objCount << " objects saved to new PMP." << std::endl;
+			std::cout << "Successfully converted " << argv[2] << "." << std::endl << _byteswap_ushort(outObjCount) << '/' << objCount << " objects saved to new PMP." << std::endl;
 		}
 		/*======================================*/
 		//                KCL
