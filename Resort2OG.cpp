@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 	if (argc == 3)
 	{
 		// Checking requested filetype
-		if (_strcmpi(argv[1], "KCL") == 0)		fileType = FType::KCL;
+		if (_strcmpi(argv[1], "KCL") == 0)      fileType = FType::KCL;
 		else if (_strcmpi(argv[1], "PMP") == 0)	fileType = FType::PMP;
 		else printError(INVALID_INPUT);
 	}
