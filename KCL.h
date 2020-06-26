@@ -13,4 +13,4 @@ namespace KCL
 		u16 normalC;
 		u16 flag;
 	};
-}
+} // namespace KCL
