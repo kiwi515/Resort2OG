@@ -21,6 +21,18 @@ enum class FType
 	PMP = 0x2
 };
 
+// http://stackoverflow.com/a/8979034/238609
+inline int IsBigEndian()
+{
+	union
+	{
+		unsigned int i;
+		char c[sizeof(unsigned int)];
+	} u;
+	u.i = 1;
+	return !u.c[0];
+}
+
 void printError(Error err)
 {
 	switch (err)
@@ -51,6 +63,7 @@ int main(int argc, char* argv[])
 {
 	std::cout << std::endl << "Resort2OG" << std::endl << "Contact me @ kiwi#5018 on Discord if you have any issues/questions/ideas for features." << std::endl;
 	FType fileType = FType::EMPTY;
+	bool BigEndian = IsBigEndian();
 
 	// Checking arg count
 	if (argc == 3)
@@ -86,7 +99,7 @@ int main(int argc, char* argv[])
 			// Allocate space for the objects
 			u16 objCount;
 			inFile.read(reinterpret_cast<char*>(&objCount), sizeof(objCount));
-			objCount = _byteswap_ushort(objCount);
+			if (!BigEndian) objCount = _byteswap_ushort(objCount);
 			PMP::Object* objList = new PMP::Object[objCount];
 
 			inFile.seekg(0x40, std::ios::beg); // Move past second set of padding -> obj data offset
@@ -94,7 +107,7 @@ int main(int argc, char* argv[])
 			// Grab object data offset
 			u32 objOffset;
 			inFile.read(reinterpret_cast<char*>(&objOffset), sizeof(objOffset));
-			objOffset = _byteswap_ulong(objOffset);
+			if (!BigEndian) objOffset = _byteswap_ulong(objOffset);
 
 			inFile.seekg(objOffset, std::ios::beg); // Move to object data
 
@@ -112,26 +125,53 @@ int main(int argc, char* argv[])
 				inFile.read(reinterpret_cast<char*>(&objList[obj].groupID), sizeof(objList[obj].groupID));
 
 				// Main Resort group 0x2 -> Main OGWS group 0x1
-				if (_byteswap_ushort(objList[obj].groupID) == 0x0002)
+				if (!BigEndian)
 				{
-					objList[obj].groupID = _byteswap_ushort(0x0001);
-					outObjCount++;
+					if (_byteswap_ushort(objList[obj].groupID) == 0x0002)
+					{
+						objList[obj].groupID = _byteswap_ushort(0x0001);
+						outObjCount++;
+					}
+				}
+				else
+				{
+					if (objList[obj].groupID == 0x0002)
+					{
+						objList[obj].groupID = 0x0001;
+						outObjCount++;
+					}
 				}
 
 				// Object ID
 				inFile.read(reinterpret_cast<char*>(&objList[obj].objID), sizeof(objList[obj].objID));
 
 				// Is current object a tree3 (0x6) object?
-				if (_byteswap_ushort(objList[obj].objID) == 0x0006)
+				if (!BigEndian)
 				{
-					// If even, the next tree3 is converted to a tree2 (0x3), else tree1 (0x2)
-					if (tree3Count % 2 == 0)
-						objList[obj].objID = _byteswap_ushort(0x0003);
-					else
-						objList[obj].objID = _byteswap_ushort(0x0002);
+					if (_byteswap_ushort(objList[obj].objID) == 0x0006)
+					{
+						// If even, the next tree3 is converted to a tree2 (0x3), else tree1 (0x2)
+						if (tree3Count % 2 == 0)
+							objList[obj].objID = _byteswap_ushort(0x0003);
+						else
+							objList[obj].objID = _byteswap_ushort(0x0002);
 
-					tree3Count++;
+						tree3Count++;
+					}
 				}
+				else
+				{
+					if (objList[obj].objID == 0x0006)
+					{
+						if (tree3Count % 2 == 0)
+							objList[obj].objID = 0x0003;
+						else
+							objList[obj].objID = 0x0002;
+
+						tree3Count++;
+					}
+				}
+
 
 				// Unknown
 				inFile.read(reinterpret_cast<char*>(&objList[obj].unk1), sizeof(objList[obj].unk1));
@@ -167,17 +207,15 @@ int main(int argc, char* argv[])
 			// End input session
 			inFile.close();
 
-			if (outObjCount == 0)
-			{
-				printError(PMP_ALREADY_CONVERTED);
-			}
+			if (outObjCount == 0) printError(PMP_ALREADY_CONVERTED);
 
 			// Output PMP
 			std::ofstream outFile;
 			outFile.open(std::string(argv[2]) + ".ogPMP", std::ios::binary | std::ios::trunc);
 			
 			// Calculate end of file for route/point null offsets (0x7F is header size)
-			u32 fileSize = _byteswap_ulong(0x7F + outObjCount * sizeof(PMP::Object) + 0x1);
+			u32 fileSize = 0x7F + outObjCount * sizeof(PMP::Object) + 0x1;
+			if (!BigEndian) fileSize = _byteswap_ulong(fileSize);
 
 			// Padding used in the header
 			std::string headerPadding1(0xC, '\x00');
@@ -185,8 +223,11 @@ int main(int argc, char* argv[])
 			std::string headerPadding3(0x34, '\x00');
 
 			// Converting vars to Big Endian as needed
-			outObjCount = _byteswap_ushort(outObjCount);
-			objOffset = _byteswap_ulong(objOffset);
+			if (!BigEndian)
+			{
+				outObjCount = _byteswap_ushort(outObjCount);
+				objOffset = _byteswap_ulong(objOffset);
+			}
 
 			// Write header
 			outFile << "PMPF" << headerPadding1; // Header + Padding section 1
@@ -200,9 +241,11 @@ int main(int argc, char* argv[])
 			// Saving the objects back into a PMP
 			for (int obj = 0; obj < objCount; obj++)
 			{
-				// All Object members are in Big-Endian to make ifstream writes more simple,
-				// so any checks will have to byteswap again
-				if (_byteswap_ushort(objList[obj].groupID) == 0x0001) // We only save back objects in group 0x0001
+				// All Object members are in Big-Endian to make ofstream writes more simple,
+				// so any checks will have to byteswap again unless the CPU is in BE mode
+
+				// We only save back objects in group 0x0001
+				if (_byteswap_ushort(objList[obj].groupID) == 0x0001 && !BigEndian || objList[obj].groupID == 0x0001 && BigEndian)
 				{
 					// Refer to "Grabbing object data from PMP" if you want to see this process commented
 					outFile.write(reinterpret_cast<char*>(&objList[obj].groupID), sizeof(objList[obj].groupID));
@@ -234,8 +277,9 @@ int main(int argc, char* argv[])
 			outFile.close();
 			// Free memory
 			delete[] objList;
-
-			std::cout << "Successfully converted " << argv[2] << "." << std::endl << _byteswap_ushort(outObjCount) << '/' << objCount << " objects saved to new PMP." << std::endl;
+			
+			if (!BigEndian) outObjCount = _byteswap_ushort(outObjCount);
+			std::cout << "Successfully converted " << argv[2] << "." << std::endl << outObjCount << '/' << objCount << " objects saved to new PMP." << std::endl;
 		}
 		/*======================================*/
 		//                KCL
@@ -263,11 +307,12 @@ int main(int argc, char* argv[])
 			inFile.seekg(0x8, std::ios::beg);
 			inFile.read(reinterpret_cast<char*>(&sec3Offset), sizeof(sec3Offset));
 			// Section 3 is one indexed into Section 4, so the offset written is 0x10 behind the actual start of Section 3
-			sec3Offset = _byteswap_ulong(sec3Offset) + 0x10;
+			if (!BigEndian) sec3Offset = _byteswap_ulong(sec3Offset);
+			sec3Offset += 0x10;
 
 			// Section 4 offset
 			inFile.read(reinterpret_cast<char*>(&sec4Offset), sizeof(sec4Offset));
-			sec4Offset = _byteswap_ulong(sec4Offset);
+			if (!BigEndian) sec4Offset = _byteswap_ulong(sec4Offset);
 			sec3TriCount = (sec4Offset - sec3Offset) / sizeof(KCL::Triangle);
 			// Allocate the array
 			KCL::Triangle *Sec3Data = new KCL::Triangle[sec3TriCount];
@@ -310,43 +355,54 @@ int main(int argc, char* argv[])
 				inFile.read(reinterpret_cast<char*>(&Sec3Data[t].flag), sizeof(Sec3Data[t].flag));
 				
 				// Resort KCL flag -> OGWS KCL flag conversion
+				if (BigEndian) Sec3Data[t].flag = _byteswap_ushort(Sec3Data[t].flag);
+
 				switch (_byteswap_ushort(Sec3Data[t].flag))
 				{
 				case 0x0101: // Resort (Fairway)
-					Sec3Data[t].flag = _byteswap_ushort(0x0001); // OGWS (Fairway)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0001); // OGWS (Fairway)
+					else Sec3Data[t].flag = 0x0001;
 					break;
 				case 0x0102: // Resort (Rough)
-					Sec3Data[t].flag = _byteswap_ushort(0x0002); // OGWS (Rough)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0002); // OGWS (Rough)
+					else Sec3Data[t].flag = 0x0002;
 					break;
 				case 0x0103: // Resort (Bunker)
-					Sec3Data[t].flag = _byteswap_ushort(0x0003); // OGWS (Bunker)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0003); // OGWS (Bunker)
+					else Sec3Data[t].flag = 0x0003;
 					break;
 				case 0x0104: // Resort (OB)
-					Sec3Data[t].flag = _byteswap_ushort(0x0004); // OGWS (OB)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0004); // OGWS (OB)
+					else Sec3Data[t].flag = 0x0004;
 					break;
 				case 0x0106: // Resort (Green)
-					Sec3Data[t].flag = _byteswap_ushort(0x0006); // OGWS (Green)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0006); // OGWS (Green)
+					else Sec3Data[t].flag = 0x0006;
 					break;
 				case 0x0107: // Resort (Water Hazard)
-					Sec3Data[t].flag = _byteswap_ushort(0x0007); // OGWS (Water Hazard)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0007); // OGWS (Water Hazard)
+					else Sec3Data[t].flag = 0x0007;
 					break;
 				case 0x0109: // Resort (Fringe)
-					Sec3Data[t].flag = _byteswap_ushort(0x0009); // OGWS (Fringe)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0009); // OGWS (Fringe)
+					else Sec3Data[t].flag = 0x0009;
 					break;
 				case 0x010C: // Resort (Cliffside)
-					Sec3Data[t].flag = _byteswap_ushort(0x000C); // OGWS (Cliffside)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x000C); // OGWS (Cliffside)
+					else Sec3Data[t].flag = 0x000C;
 					break;
 				case 0x0805: // Resort (Camera Lock OB)
-					Sec3Data[t].flag = _byteswap_ushort(0x0005); // OGWS (Camera Lock OB)
+					if (!BigEndian) Sec3Data[t].flag = _byteswap_ushort(0x0005); // OGWS (Camera Lock OB)
+					else Sec3Data[t].flag = 0x0005;
 					break;
 				}
+				if (BigEndian) Sec3Data[t].flag = _byteswap_ushort(Sec3Data[t].flag);
 
 				// Write the flag after it has been converted rather than after the initial read
 				outFile.write(reinterpret_cast<char*>(&Sec3Data[t].flag), sizeof(Sec3Data[t].flag));
 			}
 
 			// Read Section 4 and write it to the new KCL
-			// There is probably a better way to do this but I don't know
 			for (u32 i = 0; i < fileSize - sec4Offset; i++)
 			{
 				inFile.read(&byte, sizeof(byte));

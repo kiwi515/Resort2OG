@@ -150,7 +150,6 @@
     <ClCompile Include="Resort2OG.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Endian.h" />
     <ClInclude Include="KCL.h" />
     <ClInclude Include="PMP.h" />
     <ClInclude Include="Types.h" />
