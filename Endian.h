@@ -1,4 +1,4 @@
-// Byte-swapping technique adopted from LLVM (SwapByteOrder.h)
+// Byte-swapping functions are modified from LLVM's "SwapByteOrder.h"
 // See here: https://llvm.org/doxygen/SwapByteOrder_8h_source.html
 #pragma once
 #include "Types.h"
