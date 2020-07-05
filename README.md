@@ -1,5 +1,6 @@
 # Resort2OG
 Command-line tool for converting the KCL and PMP files seen in Wii Sports Resort golf courses to files usable in Wii Sports 
+Uses modified code from LLVM to handler endian-swapping, with permission under LLVM's Apache License (2.0).
   
 #### Progress (Complete!)  
   
