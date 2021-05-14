@@ -90,6 +90,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,6 +106,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,6 +124,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -138,6 +144,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)src</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,12 +155,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Resort2OG.cpp" />
+    <ClCompile Include="src\convert.cpp" />
+    <ClCompile Include="src\core\KCol.cpp" />
+    <ClCompile Include="src\core\RPUtility\RPUtlMapObject.cpp" />
+    <ClCompile Include="src\core\RPUtility\RPUtlMapData.cpp" />
+    <ClCompile Include="src\core\RPUtility\RPUtlMapPath.cpp" />
+    <ClCompile Include="src\core\RPUtility\RPUtlMapPoint.cpp" />
+    <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="KCL.h" />
-    <ClInclude Include="PMP.h" />
-    <ClInclude Include="Types.h" />
+    <ClInclude Include="src\convert.h" />
+    <ClInclude Include="src\core\endian.h" />
+    <ClInclude Include="src\core\KCol.h" />
+    <ClInclude Include="src\core\RPGame\RPGolFieldManager.h" />
+    <ClInclude Include="src\core\RPUtility\RPUtlMapPoint.h" />
+    <ClInclude Include="src\core\RPUtility\RPUtlMapPath.h" />
+    <ClInclude Include="src\core\egg\eggMatrix.h" />
+    <ClInclude Include="src\core\egg\eggVector.h" />
+    <ClInclude Include="src\core\RPUtility\RPUtlMapObject.h" />
+    <ClInclude Include="src\core\RPUtility\RPUtlMapData.h" />
+    <ClInclude Include="src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
